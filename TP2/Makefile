@@ -1,20 +1,17 @@
 CXX = g++
-RM = rm
+CXXFLAGS = `pkg-config --cflags opencv4`
+LDFLAGS = `pkg-config --libs opencv4`
 
-CFLAGS = `pkg-config --cflags opencv4`
-LIBS = `pkg-config --libs opencv4`
+all: Tp
 
-TARGET = Tp
+Tp: main.o camera.o
+	$(CXX) -o Tp main.o camera.o $(LDFLAGS)
 
-OBJS = camera.o main.o
+main.o: main.cpp
+	$(CXX) -c main.cpp $(CXXFLAGS)
 
-all: $(TARGET)
+camera.o: camera.cpp
+	$(CXX) -c camera.cpp $(CXXFLAGS)
 
-$(TARGET): $(OBJS)
-	$(CXX) -o $@ $^ $(CFLAGS)
-	
-%.o: %.cpp
-	$(CXX) -c $(CFLAGS) $<
-
-clean: 
-	$(RM) -f *.o $(TARGET)
+clean:
+	rm -f *.o Tp

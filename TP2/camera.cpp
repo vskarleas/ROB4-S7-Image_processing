@@ -35,7 +35,7 @@ bool Camera::open(std::string filename)
 	}
 	
 	// set framerate, if unable to read framerate, set it to 30
-	m_fps = m_cap.get(CV_CAP_PROP_FPS);
+	m_fps = m_cap.get(cv::CAP_PROP_FPS);
 	if(m_fps == 0)
 		m_fps = 30;
 }
@@ -43,7 +43,7 @@ bool Camera::open(std::string filename)
 void Camera::play()
 {
 	// Create main window
-	namedWindow("Video", CV_WINDOW_AUTOSIZE);
+	namedWindow("Video", cv::WINDOW_AUTOSIZE);
 	bool isReading = true;
 	// Compute time to wait to obtain wanted framerate
 	int timeToWait = 1000/m_fps;
