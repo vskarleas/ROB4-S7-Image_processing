@@ -38,6 +38,8 @@ bool Camera::open(std::string filename)
 	m_fps = m_cap.get(cv::CAP_PROP_FPS);
 	if(m_fps == 0)
 		m_fps = 30;
+
+    return true;
 }
 
 void Camera::play()
@@ -86,6 +88,7 @@ bool Camera::close()
 	// Close all the windows
 	destroyAllWindows();
 	usleep(100000);
+	return true;
 }
 
 
