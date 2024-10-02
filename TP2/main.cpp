@@ -1,5 +1,9 @@
 #include "camera.h"
 
+
+using namespace cv;
+using namespace std;
+
 int main(void)
 {
 	Camera myCam;

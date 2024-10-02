@@ -12,6 +12,7 @@ public:
 	bool open(std::string name);
 	void play();
 	bool close();
+	void afficher_lignes(std::vector<cv::Vec2f> lines, cv::Mat m_frame);
 	
 private:
 	std::string m_fileName;
