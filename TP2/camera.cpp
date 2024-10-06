@@ -70,6 +70,8 @@ void Camera::play()
 	int thres_hough = 75;
 	int thres_hough_theta = 70;
 	int threshold_value = 25;
+	int car_total = 0;
+	int previousCarCount = 0; // Initialize to 0 at the start
 	// //cv::threshold(gray, bin_d, threshold_value_1, 255, cv::THRESH_BINARY);
 
 	// // Créer une fenêtre pour afficher l'image
@@ -124,8 +126,8 @@ void Camera::play()
 			}
 
 			// Afficher les lignes restantes
-			for (size_t i = 0; i < lines.size()-1; i++) //ATTENTION: Withouth the -1, there was a segmentation Fault in Macos
-			{ // Note : on ne fait pas d'incrémentation ici
+			for (size_t i = 0; i < lines.size() - 1; i++) // ATTENTION: Withouth the -1, there was a segmentation Fault in Macos
+			{											  // Note : on ne fait pas d'incrémentation ici
 				float rho = lines[i][0];
 				float theta = lines[i][1];
 
@@ -140,7 +142,7 @@ void Camera::play()
 
 				// Vérification des conditions
 				if (pt_low.x > hough_final.cols / 2 && (theta * 180 / CV_PI) < 90)
-				{ // À droite
+				{									// À droite
 					lines.erase(lines.begin() + i); // On enlève l'élément à l'indice i
 				}
 				else
@@ -148,7 +150,7 @@ void Camera::play()
 					i++; // On incrémente seulement si on n'a pas effacé l'élément
 				}
 				if (pt_low.x < hough_final.cols / 2 && (theta * 180 / CV_PI) > 90)
-				{ // À gauche
+				{									// À gauche
 					lines.erase(lines.begin() + i); // On enlève l'élément à l'indice i
 				}
 				else
@@ -168,7 +170,7 @@ void Camera::play()
 
 			cv::cvtColor(Movement, gray, cv::COLOR_BGR2GRAY);
 			cv::threshold(gray, edges, threshold_value, 255, cv::THRESH_BINARY);
-			//cv::Canny(m_frame, edges, threshold_value_1_inf, threshold_value_1_sup);
+			// cv::Canny(m_frame, edges, threshold_value_1_inf, threshold_value_1_sup);
 
 			// fermeture (dilatation puis erosion)
 			//  Création d'un élément structurant pour la dilatation et l'érosion
@@ -185,18 +187,18 @@ void Camera::play()
 			std::vector<std::vector<cv::Point>> contours;
 			cv::findContours(closed, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_SIMPLE);
 
-		    // Filtrer et dessiner les contours
+			// int carCount = 0; // Compteur de voitures
+
+			// Filtrer et dessiner les contours
 			// for (size_t i = 0; i < contours.size(); i++) {
-            //     double area = cv::contourArea(contours[i]);
-            //     if ((area<10000) && (area>135)) { // Ajustez ce seuil selon la taille des voitures dans la vidéo
-            //         cv::drawContours(hough_final, contours, static_cast<int>(i), cv::Scalar(0, 255, 0), 2);
-            //         carCount++; // Compter le contour comme une voiture
-            //     }
-            // }
+			//     double area = cv::contourArea(contours[i]);
+			//     if ((area<10000) && (area>135)) { // Ajustez ce seuil selon la taille des voitures dans la vidéo
+			//         cv::drawContours(hough_final, contours, static_cast<int>(i), cv::Scalar(0, 255, 0), 2);
+			//         carCount++; // Compter le contour comme une voiture
+			//     }
+			// }
 
-
-			int carCount = 0; // Compteur de voitures
-
+			//====================== Vasilis Proposal =========================
 			std::vector<cv::Rect> car_rects;
 
 			for (size_t i = 0; i < contours.size(); i++)
@@ -205,7 +207,7 @@ void Camera::play()
 				if ((area < 10000) && (area > 135))
 				{
 					cv::Rect rect = cv::boundingRect(contours[i]);
-					car_rects.push_back(rect);
+					car_rects.push_back(rect); // Ajoute le rectangle à la liste des rectangles des voitures
 				}
 			}
 
@@ -214,7 +216,7 @@ void Camera::play()
 			{
 				for (size_t j = i + 1; j < car_rects.size(); j++)
 				{
-					if ((car_rects[i] & car_rects[j]).area() > 0 || (cv::norm(car_rects[i].tl() - car_rects[j].tl()) < 50))
+					if ((car_rects[i] & car_rects[j]).area() > 0 || (cv::norm(car_rects[i].tl() - car_rects[j].tl()) < 50)) // Merge rectangles if they intersect or are close
 					{
 						car_rects[i] = car_rects[i] | car_rects[j];
 						car_rects.erase(car_rects.begin() + j);
@@ -224,11 +226,25 @@ void Camera::play()
 			}
 
 			int carCount = car_rects.size();
+
 			for (const auto &rect : car_rects)
 			{
 				cv::rectangle(hough_final, rect, cv::Scalar(0, 255, 0), 2);
 			}
-		
+			//======================== End of Vasilis Proposal =========================
+
+			// Compare carCount with previous frame's car count - COMMENT: We need to use a ROI to improve the results. This is what I believe
+			if (carCount > previousCarCount)
+			{
+				car_total += (carCount - previousCarCount); // Add only new cars detected
+			}
+
+			// Update the previous car count
+			previousCarCount = carCount;
+
+			// Print total number of cars detected
+			std::cout << "Total cars detected: " << car_total << std::endl;
+
 			// Afficher le nombre de voitures détectées
 			cv::putText(hough_final, "Nombre de voitures: " + std::to_string(carCount), cv::Point(10, 30),
 						cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 2);
