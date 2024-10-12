@@ -143,6 +143,7 @@ bool Camera::open(std::string filename)
 
 // List pour sauvegarder les voitures detectées avant
 std::vector<cv::Rect> voitures_precedentes;
+std::vector<cv::Vec2f> fixed_lines;
 
 // Compter les voitures selon les rectangles approximatifs donnes
 void compter_voitures(std::vector<cv::Rect> &voitures_maintenant, int &voitures_gauche, int &voitures_droite, cv::Mat &frame)
@@ -239,8 +240,10 @@ void process_frame(cv::Mat &frame, cv::Mat &edges, int &voitures_gauche, int &vo
 				cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 2);
 }
 
-void trier_lignes(std::vector<cv::Vec2f> &lignes, cv::Mat& frame, cv::Mat& hough_final, int thres_hough_theta, int rho_threshold, int theta_threshold) {
-	
+// Tri des lignes de Hough selon les critères de l'analyse (Objectif: Garder les lignes qui sont plus proches à la route et qui respectent les normes)
+void trier_lignes(std::vector<cv::Vec2f> &lignes, cv::Mat &frame, cv::Mat &hough_final, int thres_hough_theta, int rho_threshold, int theta_threshold)
+{
+
 	/* Enlever les lignes de Hough qui ont un angle inferieur a thres_hough_theta choisi pendant l'analyse */
 	// Tri No 1
 	for (size_t j = 0; j < lignes.size();)
@@ -297,19 +300,18 @@ void trier_lignes(std::vector<cv::Vec2f> &lignes, cv::Mat& frame, cv::Mat& hough
 	/* Si il y a plusiers lignes qui sont très proche (+- rho_threshold) avec une angle similaire
 	(+- theta_threshold), on veut faire un merging et considerer une seule ligne dans ce cas */
 	lignes = merge_lignes(lignes, rho_threshold, theta_threshold); // On merge les lignes
-
 }
 
-std::vector<cv::Vec2f> keep_one_line(std::vector<cv::Vec2f> &lignes){
-
+std::vector<cv::Vec2f> keep_one_line(std::vector<cv::Vec2f> &lignes)
+{
 	std::vector<cv::Vec2f> one_line;
 	float rho_moyenne_gauche = 0;
 	float theta_moyen_gauche = 0;
 	float rho_moyenne_droite = 0;
 	float theta_moyen_droite = 0;
 
-	int nombre_droite = 0; //nombre de droite a droite
-	int nombre_gauche = 0; //nombre de droite a gauche
+	int nombre_droite = 0; // nombre de droite a droite
+	int nombre_gauche = 0; // nombre de droite a gauche
 
 	/* On va parcourir tous les lignes */
 	for (size_t i = 0; i < lignes.size(); i++)
@@ -339,29 +341,25 @@ std::vector<cv::Vec2f> keep_one_line(std::vector<cv::Vec2f> &lignes){
 	rho_moyenne_droite = rho_moyenne_droite / nombre_droite;
 	theta_moyen_droite = theta_moyen_droite / nombre_droite;
 
-    
-    // Ajouter deux éléments au vecteur
-    one_line.push_back(cv::Vec2f(rho_moyenne_droite, theta_moyen_droite));  // Premier élément
-    one_line.push_back(cv::Vec2f(rho_moyenne_gauche, theta_moyen_gauche));  // Deuxième élément
+	// Ajouter deux éléments au vecteur
+	one_line.push_back(cv::Vec2f(rho_moyenne_droite, theta_moyen_droite)); // Premier élément
+	one_line.push_back(cv::Vec2f(rho_moyenne_gauche, theta_moyen_gauche)); // Deuxième élément
 
 	return one_line;
 }
-
-
 
 // Main loop to capture and process video frames
 void Camera::play()
 {
 	// Create main window
 	namedWindow("Video", cv::WINDOW_AUTOSIZE);
-	
+
 	// Compute time to wait to obtain wanted framerate
 	int timeToWait = 1000 / m_fps;
 
 	// Declaration des matrices des images utilise dans la logique ci-dessous
 	Mat gray, edges, hough, hough_final, frame_prec, Movement, frame_with_fixed_lines;
 
-	//
 	int threshold_value_1_inf = 200;
 	int threshold_value_1_sup = 50;
 	int thres_hough = 75;		// Parametre pour la transformation de Hough
@@ -372,10 +370,10 @@ void Camera::play()
 	int voiture_total_droite = 0; // Compteur toral des voitures droite
 	// int previousCarCount = 0; // Initialize previous car count
 
-	// //cv::threshold(gray, bin_d, threshold_value_1, 255, cv::THRESH_BINARY);
+	int frame_id = 0; // Compter les frames du video pour appliquer la logique de tranformation de Hough dans une selection des images
 
 	// Ils sont utilisé pour le merging des lignes qui sont tres proches. regarde remarque 1.2
-	float rho_threshold = 13;
+	float rho_threshold = 23;
 	float theta_threshold = CV_PI / 180 * 13;
 
 	/* Créer une fenêtre pour afficher l'image */
@@ -397,7 +395,6 @@ void Camera::play()
 	hough_final = m_frame.clone();
 
 	bool first_frame = true; // pour avoir uniquement la premiere image, (vaut false apres la premiere image)
-	
 
 	/* Obtenir l'image en niveau de grey */
 	cv::cvtColor(m_frame, gray, cv::COLOR_BGR2GRAY);
@@ -446,10 +443,20 @@ void Camera::play()
 			afficher_lignes(lignes, hough);
 			cv::imshow("Voies detectees", hough);
 
-			trier_lignes(lignes,hough,hough_final,thres_hough_theta,rho_threshold,theta_threshold);
-			afficher_lignes(lignes, hough_final);	  // Mettre des lignes mergees sur hough_final
+			trier_lignes(lignes, hough, hough_final, thres_hough_theta, rho_threshold, theta_threshold);
+			afficher_lignes(lignes, hough_final); // Mettre des lignes mergees sur hough_final
 
-			cv::imshow("Voies detectees Final", hough_final); // Afficher la nouvelle image (hough_final) avec les lignes mergees
+			// cv::imshow("Voies detectees Final", hough_final); // Afficher la nouvelle image (hough_final) avec les lignes mergees
+
+			if (frame_id < 10) // Collect lines in the first 10 frames
+			{
+				/* Si il y a plusiers lignes qui sont très proche (+- rho_threshold) avec une angle similaire
+				(+- theta_threshold), on veut faire un merging et considerer une seule ligne dans ce cas */
+				lignes = merge_lignes(lignes, rho_threshold, theta_threshold);
+
+				/* Sauvegarder sur un objet global les lignes qu'on garde */
+				fixed_lines.insert(fixed_lines.end(), lignes.begin(), lignes.end());
+			}
 
 			// **************** Partie 2 **************** //
 			/* Detection des voitures et comptage */
@@ -465,10 +472,6 @@ void Camera::play()
 			/* Segmentation de l'image ndg Movement */
 			cv::threshold(gray, edges, threshold_value, 255, cv::THRESH_BINARY);
 
-			// cv::Canny(m_frame, edges, threshold_value_1_inf, threshold_value_1_sup);
-
-			//******************** Approach 1 ********************
-			/* We appply... */
 			/*
 
 			// fermeture (dilatation puis erosion)
@@ -556,12 +559,22 @@ void Camera::play()
 
 			*/
 
-			//********************** Approach 2 ***********************
-			if(first_frame){ //Pour que les ligne de la route s'applique sur la matrice final en faisant reference uniquement a la premiere image
-				ligne_fix = keep_one_line(lignes);
-				first_frame = false;
+			// if (first_frame)
+			// { // Pour que les ligne de la route s'applique sur la matrice final en faisant reference uniquement a la premiere image
+			// 	ligne_fix = keep_one_line(lignes);
+			// 	first_frame = false;
+			// }
+			// afficher_lignes(ligne_fix, frame_with_fixed_lines);
+
+			/* Application des lignes trouvés par la transformation de Hough sur le reste de frames */
+			if (frame_id >= 10)
+			{
+				for (const auto &line : fixed_lines)
+				{
+					afficher_lignes({line}, frame_with_fixed_lines);
+				}
 			}
-			afficher_lignes(ligne_fix, frame_with_fixed_lines);
+
 			process_frame(frame_with_fixed_lines, edges, voiture_total_gauche, voiture_total_droite);
 
 			cv::imshow("Car Detection", frame_with_fixed_lines);
@@ -577,6 +590,8 @@ void Camera::play()
 			std::cerr << "Stopped by user" << std::endl;
 			isReading = false;
 		}
+
+		frame_id++; // Incrementation du frame counter
 	}
 
 	printf("Total cars detected: %d\n", voiture_total_gauche + voiture_total_droite);

@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "*.embeddedhtml": "html",
-        "locale": "cpp"
+        "locale": "cpp",
+        "iosfwd": "cpp",
+        "vector": "cpp"
     }
 }
