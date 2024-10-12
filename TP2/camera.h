@@ -21,3 +21,6 @@ private:
 		
 	Mat m_frame;	
 };
+
+void trier_lignes(std::vector<cv::Vec2f> &lignes, cv::Mat& frame, cv::Mat& hough_final, int thres_hough_theta, int rho_threshold, int theta_threshold);
+

@@ -239,17 +239,127 @@ void process_frame(cv::Mat &frame, cv::Mat &edges, int &voitures_gauche, int &vo
 				cv::FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(255, 255, 255), 2);
 }
 
+void trier_lignes(std::vector<cv::Vec2f> &lignes, cv::Mat& frame, cv::Mat& hough_final, int thres_hough_theta, int rho_threshold, int theta_threshold) {
+	
+	/* Enlever les lignes de Hough qui ont un angle inferieur a thres_hough_theta choisi pendant l'analyse */
+	// Tri No 1
+	for (size_t j = 0; j < lignes.size();)
+	{
+		int angle = lignes[j][1] * 180 / CV_PI; // recuperer l'angle en degre car il est donnee en radians par HoughLines()
+		if ((angle > thres_hough_theta) && (angle < 180 - thres_hough_theta))
+		{
+			lignes.erase(lignes.begin() + j); // Enlève l'élément à l'indice j
+		}
+		else // passer à la prochaine
+		{
+			j++;
+		}
+	}
+
+	/* Enlever les lignes restants qui n'ont pas la bonne inclinaison au correct partie de limage */
+	// Tri No 2
+	for (size_t i = 0; i < lignes.size() - 1; i++) // ATTENTION: Withouth the -1, there was a segmentation Fault in Macos
+	{
+
+		float rho = lignes[i][0];
+		float theta = lignes[i][1];
+		double a = cos(theta), b = sin(theta);
+
+		/* Calcul des coordonnees cartesiennes des points qui compose une ligne.
+		C'est la projection d'un vecteur ligne sur le repere de base */
+		double x0 = a * rho;
+		double y0 = b * rho;
+
+		/* Calcul du point le plus bas sur la ligne */
+		// Le point (x0, y0) s'agit d'un point le plus proche de l'origine (selon l'équation de Hough).
+		// Le point pt_low est choisi en s'éloignant de ce point le long de la ligne dans une sense (vers le bas dans ce cas là).*/
+		cv::Point pt_low(cvRound(x0 + 1000 * (-b)), cvRound(y0 + 1000 * (a)));
+
+		/* Corps du tri No 2 */
+		if (pt_low.x > hough_final.cols / 2 && (theta * 180 / CV_PI) < 90) // À droite
+		{
+			lignes.erase(lignes.begin() + i); // On enlève l'élément à l'indice i
+		}
+		else
+		{
+			i++; // On incrémente seulement si on n'a pas effacé l'élément
+		}
+		if (pt_low.x < hough_final.cols / 2 && (theta * 180 / CV_PI) > 90) // À gauche
+		{
+			lignes.erase(lignes.begin() + i); // On enlève l'élément à l'indice i
+		}
+		else
+		{
+			i++;
+		}
+	}
+
+	/* Si il y a plusiers lignes qui sont très proche (+- rho_threshold) avec une angle similaire
+	(+- theta_threshold), on veut faire un merging et considerer une seule ligne dans ce cas */
+	lignes = merge_lignes(lignes, rho_threshold, theta_threshold); // On merge les lignes
+
+}
+
+std::vector<cv::Vec2f> keep_one_line(std::vector<cv::Vec2f> &lignes){
+
+	std::vector<cv::Vec2f> one_line;
+	float rho_moyenne_gauche = 0;
+	float theta_moyen_gauche = 0;
+	float rho_moyenne_droite = 0;
+	float theta_moyen_droite = 0;
+
+	int nombre_droite = 0; //nombre de droite a droite
+	int nombre_gauche = 0; //nombre de droite a gauche
+
+	/* On va parcourir tous les lignes */
+	for (size_t i = 0; i < lignes.size(); i++)
+	{
+		/* Obtenir les coordonees polaires de la ligne */
+		float rho = lignes[i][0];
+		float theta = lignes[i][1];
+
+		/* Decision si la ligne est plus proche à gauche ou plus proche à droit selon theta et rho */
+		if (rho < 0 && theta > CV_PI / 2) // est qu'on à gauche ? Si oui, alors theta est superieur que pi/2
+		{
+			rho_moyenne_gauche += rho;
+			theta_moyen_gauche += theta;
+			nombre_gauche++;
+		}
+		else if (rho > 0 && theta < CV_PI / 2) // on à droite? Si oui, alors theta est inferieur que pi/2
+		{
+			rho_moyenne_droite += rho;
+			theta_moyen_droite += theta;
+			nombre_droite++;
+		}
+	}
+
+	rho_moyenne_gauche = rho_moyenne_gauche / nombre_gauche;
+	theta_moyen_gauche = theta_moyen_gauche / nombre_gauche;
+
+	rho_moyenne_droite = rho_moyenne_droite / nombre_droite;
+	theta_moyen_droite = theta_moyen_droite / nombre_droite;
+
+    
+    // Ajouter deux éléments au vecteur
+    one_line.push_back(cv::Vec2f(rho_moyenne_droite, theta_moyen_droite));  // Premier élément
+    one_line.push_back(cv::Vec2f(rho_moyenne_gauche, theta_moyen_gauche));  // Deuxième élément
+
+	return one_line;
+}
+
+
+
 // Main loop to capture and process video frames
 void Camera::play()
 {
 	// Create main window
 	namedWindow("Video", cv::WINDOW_AUTOSIZE);
-	bool isReading = true;
+	
 	// Compute time to wait to obtain wanted framerate
 	int timeToWait = 1000 / m_fps;
 
 	// Declaration des matrices des images utilise dans la logique ci-dessous
-	Mat gray, edges, hough, hough_final, frame_prec, Movement;
+	Mat gray, edges, hough, hough_final, frame_prec, Movement, frame_with_fixed_lines;
 
 	//
 	int threshold_value_1_inf = 200;
@@ -282,9 +392,12 @@ void Camera::play()
 	cv::createTrackbar("Seuil", "Thresholded Image", &threshold_value, 255);
 
 	// Capture the first frame
-	m_cap.read(m_frame);
+	bool isReading = m_cap.read(m_frame);
 	frame_prec = m_frame.clone();
 	hough_final = m_frame.clone();
+
+	bool first_frame = true; // pour avoir uniquement la premiere image, (vaut false apres la premiere image)
+	
 
 	/* Obtenir l'image en niveau de grey */
 	cv::cvtColor(m_frame, gray, cv::COLOR_BGR2GRAY);
@@ -293,7 +406,7 @@ void Camera::play()
 	cv::Canny(gray, edges, 255, 255);
 
 	/* Application de la transformation de Hough pour dectecter des lignes */
-	std::vector<cv::Vec2f> lignes; // chaque ligne composé par des coordonees polaires (rho, theta)
+	std::vector<cv::Vec2f> lignes, ligne_fix; // chaque ligne composé par des coordonees polaires (rho, theta), lignes contient toute les lignes et les lignes unqiuement celles une ligne par route
 	cv::HoughLines(edges, lignes, 1, CV_PI / 180, thres_hough);
 
 	/*Sauvegarder le frame en copie pour realiser la substraction avec le prochaine frame.
@@ -312,6 +425,7 @@ void Camera::play()
 			imshow("Video", m_frame);
 			hough = m_frame.clone(); // meme que Remarque 1.1
 			hough_final = m_frame.clone();
+			frame_with_fixed_lines = m_frame.clone();
 
 			// ================ Code ==================== //
 			// **************** Partie 1 **************** //
@@ -332,64 +446,9 @@ void Camera::play()
 			afficher_lignes(lignes, hough);
 			cv::imshow("Voies detectees", hough);
 
-			/* Enlever les lignes de Hough qui ont un angle inferieur a thres_hough_theta choisi pendant l'analyse */
-			// Tri No 1
-			for (size_t j = 0; j < lignes.size();)
-			{
-				int angle = lignes[j][1] * 180 / CV_PI; // recuperer l'angle en degre car il est donnee en radians par HoughLines()
-				if ((angle > thres_hough_theta) && (angle < 180 - thres_hough_theta))
-				{
-					lignes.erase(lignes.begin() + j); // Enlève l'élément à l'indice j
-				}
-				else // passer à la prochaine
-				{
-					j++;
-				}
-			}
-
-			/* Enlever les lignes restants qui n'ont pas la bonne inclinaison au correct partie de limage */
-			// Tri No 2
-			for (size_t i = 0; i < lignes.size() - 1; i++) // ATTENTION: Withouth the -1, there was a segmentation Fault in Macos
-			{
-
-				float rho = lignes[i][0];
-				float theta = lignes[i][1];
-				double a = cos(theta), b = sin(theta);
-
-				/* Calcul des coordonnees cartesiennes des points qui compose une ligne.
-				C'est la projection d'un vecteur ligne sur le repere de base */
-				double x0 = a * rho;
-				double y0 = b * rho;
-
-				/* Calcul du point le plus bas sur la ligne */
-				// Le point (x0, y0) s'agit d'un point le plus proche de l'origine (selon l'équation de Hough).
-				// Le point pt_low est choisi en s'éloignant de ce point le long de la ligne dans une sense (vers le bas dans ce cas là).*/
-				cv::Point pt_low(cvRound(x0 + 1000 * (-b)), cvRound(y0 + 1000 * (a)));
-
-				/* Corps du tri No 2 */
-				if (pt_low.x > hough_final.cols / 2 && (theta * 180 / CV_PI) < 90) // À droite
-				{
-					lignes.erase(lignes.begin() + i); // On enlève l'élément à l'indice i
-				}
-				else
-				{
-					i++; // On incrémente seulement si on n'a pas effacé l'élément
-				}
-				if (pt_low.x < hough_final.cols / 2 && (theta * 180 / CV_PI) > 90) // À gauche
-				{
-					lignes.erase(lignes.begin() + i); // On enlève l'élément à l'indice i
-				}
-				else
-				{
-					i++;
-				}
-			}
-
-			/* Si il y a plusiers lignes qui sont très proche (+- rho_threshold) avec une angle similaire
-			(+- theta_threshold), on veut faire un merging et considerer une seule ligne dans ce cas */
-			lignes = merge_lignes(lignes, rho_threshold, theta_threshold); // On merge les lignes
-
+			trier_lignes(lignes,hough,hough_final,thres_hough_theta,rho_threshold,theta_threshold);
 			afficher_lignes(lignes, hough_final);	  // Mettre des lignes mergees sur hough_final
+
 			cv::imshow("Voies detectees Final", hough_final); // Afficher la nouvelle image (hough_final) avec les lignes mergees
 
 			// **************** Partie 2 **************** //
@@ -498,9 +557,14 @@ void Camera::play()
 			*/
 
 			//********************** Approach 2 ***********************
+			if(first_frame){ //Pour que les ligne de la route s'applique sur la matrice final en faisant reference uniquement a la premiere image
+				ligne_fix = keep_one_line(lignes);
+				first_frame = false;
+			}
+			afficher_lignes(ligne_fix, frame_with_fixed_lines);
+			process_frame(frame_with_fixed_lines, edges, voiture_total_gauche, voiture_total_droite);
 
-			process_frame(hough_final, edges, voiture_total_gauche, voiture_total_droite);
-			cv::imshow("Car Detection", hough_final);
+			cv::imshow("Car Detection", frame_with_fixed_lines);
 		}
 		else
 		{
