@@ -194,7 +194,7 @@ void compter_voitures(std::vector<cv::Rect> &voitures_maintenant, int &voitures_
 void process_frame(cv::Mat &frame, cv::Mat &edges, int &voitures_gauche, int &voitures_droite)
 {
 	/* Images qu'on a besoin pour faire la fermeture */
-	cv::Mat gray, closed, dilated;
+	cv::Mat closed, dilated;
 
 	/* Creation de la masque pour fermeture */
 	cv::Mat masque = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15));
@@ -296,10 +296,6 @@ void trier_lignes(std::vector<cv::Vec2f> &lignes, cv::Mat &frame, cv::Mat &hough
 			i++;
 		}
 	}
-
-	/* Si il y a plusiers lignes qui sont très proche (+- rho_threshold) avec une angle similaire
-	(+- theta_threshold), on veut faire un merging et considerer une seule ligne dans ce cas */
-	lignes = merge_lignes(lignes, rho_threshold, theta_threshold); // On merge les lignes
 }
 
 std::vector<cv::Vec2f> keep_one_line(std::vector<cv::Vec2f> &lignes)
