@@ -18,14 +18,6 @@ On essaye de ne pas se baser sur une manière de résolution qui est spécifique
 | **Avantages**      | Une bonne séparation entre les voies et la pelouse. C'est une méthode simple à mettre en œuvre, car elle ne nécessite pas de transformations mathématiques complexes.                                                       | Méthode plus universelle car il ne dépend pas à la différence des couleurs. C'est une méthode robuste en ce qui concerne le bruit et la différence d'intensité. |
 | **Inconvénients** | Dépend sur la différence des couleurs qui est spécifique pour les frames en question. En plus, cette méthode est très sensible aux variations d'éclairage, aux ombres et aux autres objets colorés présents dans l'image. | Ce méthode ne peut pas être applique aux cas des voies tournantes si on ne fait pas un raisonnent.                                                                   |
 
-|                          | Approche 2                                                                                                                                                             |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Méthode**       | Appliquer la transforme de Hough car les voies sont caractérisées par des lignes droites                                                                             |
-| **Avantages**      | Méthode plus universelle car il ne dépend pas à la différence des couleurs. C'est une méthode robuste en ce qui concerne le bruit et la différence d'intensité. |
-| **Inconvénients** | Ce méthode ne peut pas être applique aux cas des voies tournantes si on ne fait pas un raisonnent                                                                    |
-
-Dans notre résolution, on a choisi de procéder avec la méthode de la transformation de Hough car e
-
 Dans notre résolution, on a choisi de procéder avec la méthode de la transformation de Hough car elle peut être adaptée à différents types de marquages au sol et à différentes conditions routières. En outre, la transformée de Hough est plus robuste face aux variations d'éclairage et au bruit, quelque chose qui le rendre universelle selon les cas d'application différents.
 
 #### Comment on appliqué ?
