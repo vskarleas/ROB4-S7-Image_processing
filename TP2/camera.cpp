@@ -1,3 +1,9 @@
+// #############################################################################
+// # file_input camera.cpp
+// # Traitment d'image TP2 - Polytech Sorbonne - 2024/2025 - S7
+// # Auteurs : Vasileios Filippos Skarleas, Rami Aridi - Tous droits réservés.
+// #############################################################################
+
 #include "camera.h"
 #include <iostream>
 #include <sstream>

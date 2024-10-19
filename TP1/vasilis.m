@@ -1,3 +1,5 @@
+%% Copyright Vasileios Filippos Skarleas
+
 %% TP1
 close all;
 
