@@ -2,7 +2,7 @@
 
 ## Français
 
-Bienvenue dans le dépôt du module de **Traitement d'image**. Ici, vous trouverez les sujets de cours (CM), les travaux dirigés (TD), ainsi que les travaux pratiques (TP).
+Bienvenue dans le dépôt du module de **Traitement d'image** (ROB4 Polytech Sorbonne). Ici, vous trouverez les sujets de cours (CM), les travaux dirigés (TD), ainsi que les travaux pratiques (TP).
 
 ### Sujets abordés :
 - Érosion et Dilatation
