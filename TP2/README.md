@@ -1,6 +1,6 @@
 # Compte rendu TP Traitement d'image
 
-## Vasilis SKARLEAS, Rami ARIDI
+## Vasileios Filippos SKARLEAS, Rami ARIDI
 
 ### Partie 1 - Détection des voies
 
