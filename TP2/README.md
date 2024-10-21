@@ -6,7 +6,7 @@
 
 #### Objectifs
 
-Dans cette première partie, on souhaite détecter les voies de circulation à gauche et à droit. Ici on travaille sur un vidéo de la roue, mais le même principe peut être appliqué aux vidéos capture par les voitures autonomes pour détecter les voies de gauche et droit respectivement.
+Dans cette première partie, on souhaite détecter les voies de circulation à gauche et à droit. Ici on travaille sur un vidéo de la roue, mais le même principe peut être appliqué aux vidéos capturés par les voitures autonomes pour détecter les voies de gauche et droit respectivement.
 
 On essaye de ne pas se baser sur une manière de résolution qui est spécifique pour cette vidéo, mais d'appliquer des méthodes universelles ou on peut appliquer dans différents formats de vidéo tout en incluant des outils qui permettra de régler les seuils des différents filtres et méthodes de traitement d'image qui sont appliqué et qu'on va voir en détail sur la partie ci-dessous (par exemple les Trackbars nous permet de changer les paramètres de base de notre application).
 
@@ -20,7 +20,7 @@ On essaye de ne pas se baser sur une manière de résolution qui est spécifique
 
 Dans notre résolution, on a choisi de procéder avec la méthode de la transformation de Hough car elle peut être adaptée à différents types de marquages au sol et à différentes conditions routières. En outre, la transformée de Hough est plus robuste face aux variations d'éclairage et au bruit, quelque chose qui le rendre universelle selon les cas d'application différents.
 
-#### Comment on appliqué ?
+#### Comment on a appliqué ?
 
 La vidéo est constituée d'une série d'images fixes, qui sont affichées les unes après les autres à une vitesse très rapide (30 FPS dans notre cas).
 
@@ -31,38 +31,38 @@ Camera::Camera()
 }
 ```
 
-Donc, on peut appliquer toutes les différentes méthodes du cours sur chaque image qui compose la vidéo et avoir des résultats en temps réels si on considère la vitesse de la réalisation de calcul. [À partir de ce moment, chaque fois qu&#39;on est référencé a une image, en fait on est referee a un frame de la vidéo]().
+Donc, on peut appliquer toutes les différentes méthodes du cours sur chaque image qui compose la vidéo et avoir des résultats en temps réels si on considère la vitesse de la réalisation de calcul. À partir de ce moment, chaque fois qu&#39;on est référencé a une image, en fait on est referee a un frame de la vidéo.
 
 ##### Étapes
 
 1. Obtenir l'image en niveau de gris (`gray`)
 
-   ![1729093118358](https://i.postimg.cc/prwcLCbw/image.png)
-2. Détection des contours (`edges`).
+   ![1729093118358](https://cdn.madebyvasilis.site/group/1729093118358.png)
+2. Trouver les points de contours (image  `edges`). On ne trouve pas les contours mais seulment les points qui pouraient constituer des contours. On va trouver des contours à la partie 2.
 
-   ![1729093124019](https://i.postimg.cc/2y0vH8T2/image.png)
+   ![1729093124019](https://cdn.madebyvasilis.site/group/1729093124019.png)
 3. Application de la transformée de Hough sur `edges` et sauvegarder les retours de la transformée de Hough sur un vecteur de dimension 2.
 
-   ![1729093182110](https://i.postimg.cc/ydtWWgQq/image.png)
+   ![1729093182110](https://cdn.madebyvasilis.site/group/1729093182110.png)
 
    1. ρ : qui est a distancé par le pixel principal
    2. θ : l'angle de la ligne selon le pixel en question
 4. Trier les lignes sauvegardé
 5. Fusionner les lignes qui sont très proches (`rho_threshold`) avec une différence d'inclinaison acceptable (`theta_threshold`). Voici une image après cette procédure:
-   ![1729093232486](https://i.postimg.cc/ZnmtfJ0B/image.png)
+   ![1729093232486](https://cdn.madebyvasilis.site/group/1729093232486.png)
 
 ##### Applications
 
 ###### Détection des contours
 
-On a besoin de trouver les contours sur l'image car la transformée de Hough est applicable seulement sur une liste des contours. Forcément pour détecter les contours, il faut avoir l'image en niveau de gris. Il y a plusieurs méthodes d'obtenir les contours comme l'approche Laplacien ou l'approche gradient. Ici, on a procédé avec la méthode de Canny qu'on n'a pas vu en cours mais il est sensé d'être très efficace par rapport le calcul des points de contours.
+On a besoin de trouver les points de contours sur l'image car la transformée de Hough est applicable seulement sur une liste des contours. Forcément pour détecter les contours, il faut avoir l'image en niveau de gris. Il y a plusieurs méthodes d'obtenir les contours comme l'approche Laplacien ou l'approche gradient. Ici, on a procédé avec la méthode de Canny qu'on n'a pas vu en cours mais il est sensé d'être très efficace par rapport le calcul des points de contours.
 
 ###### Transformée de Hough
 
 Sur la libraire OpenCV, il a y a deux fonctions qui permet de récupérer les lignes de Hough :
 
-* HoughLines retourne le ρ et le θ
-* HoughLinesP retourne les coordonnées de deux points qui constitue une ligne
+* HoughLines qui retourne le ρ et le θ
+* HoughLinesP qui retourne les coordonnées de deux points qui constitue une ligne
 
 ```cpp
 cv::HoughLines(edges, lignes, 1, CV_PI / 180, thres_hough);
@@ -74,7 +74,7 @@ Nous on a utilisé `HoughLines` car on veut faire le tri qu'on va détailler ci-
 
 Une fois qu'on a sauvegardé toutes les lignes détectées par la transformé de Hough, il faut distinguer des différents cas et garder que les lignes qui sont en norme. Par exemple, dans l'image ci-dessous, la ligne verte ne peut pas être accepté car l'angle φ est beaucoup plus grand que celui pour les lignes de voies.
 
-![1729091286509](https://i.postimg.cc/DfxBp2S9/image.png)
+![1729091286509](https://cdn.madebyvasilis.site/group/1729091286509.png)
 
 Les différents tests qu'on effectue sont :
 
@@ -95,7 +95,7 @@ Les différents tests qu'on effectue sont :
     }
    ```
 2. Enlever les lignes restants qui n'ont pas la bonne inclinaison au correct partie de l’image.
-   ![1729091624039](https://i.postimg.cc/8k7tY2Ls/image.png)
+   ![1729091624039](https://cdn.madebyvasilis.site/group/1729091624039.png)
    Dans l'mage ci-dessus, la ligne verte n'est pourrait pas accepter même si il est dans les normes de `thres_hough_theta` car il est localisé à la fausse partie de l'image.
    ```cpp
    // Tri No 2
@@ -138,7 +138,7 @@ Les différents tests qu'on effectue sont :
 
 ###### Fusionner les lignes
 
-S’il y a plusieurs lignes qui sont très proche (+- rho_threshold) avec un angle similaire (+- theta_threshold), on veut faire une fusion et considérer une seule ligne dans ce cas.
+S’il y a plusieurs lignes qui sont très proche (+- rho_threshold) avec un angle similaire (+- theta_threshold), on veut faire une fusion et considérer une seule ligne dans ce cas là.
 
 ```cpp
 lignes = merge_lignes(lignes, rho_threshold, theta_threshold); // On merge les lignes
@@ -211,7 +211,7 @@ if (frame_id >= 10)
 
 ##### Remarque sur la transformée de Hough
 
-À partir les paramètres θ et ρ, on peut calculer des points de la ligne en s'éloignant de point d'origine le long de la ligne dans les deux sens (haut et bas). Avant faire ça, il faut calculer le point d'origine qu'il suffit forcement d'une simple projection de la ligne de Hough sur le système cartésien x et y via:
+À partir les paramètres θ et ρ, on peut calculer des points de la ligne en s'éloignant de point d'origine le long de la ligne dans les deux sens (haut et bas). Avant faire ça, il faut calculer le point d'origine qu'il s'agit forcement d'une simple projection de la ligne de Hough sur le système cartésien x et y de l'image via:
 
 ```cpp
 float rho = lignes[i][0];
@@ -225,7 +225,7 @@ double x0 = a * rho;
 double y0 = b * rho;
 ```
 
-Donc pour le calcul de deux points qui permettent de designer la ligne à la fin sur l'image on a:
+Donc pour le calcul de deux points qui permettent de designer la ligne à la fin sur l'image on a (on utlise 1000 - une grande valeur pour s'eloigner du point d'origine):
 
 ```cpp
 cv::Point pt1(cvRound(x0 + 1000 * (-b)), cvRound(y0 + 1000 * (a)));
@@ -245,8 +245,8 @@ Il faut faire un traitement d'image adapté qui est capable de détecter les obj
 1. Substruction du frame du maintenant avec le frame précèdent. Ca va nous donner une image avec seulement les objets qui sont en mouvement (image `Movement`).
 2. Obtenir l'image Movement en niveau de gris
 3. Segmentation/binarisation de l'image en utilisant `threshold`
-4. On fait une fermeture pour fermer les trous, si possible, à l'image `edges` **qui est l'image Movement binarisé**. On obtiens l'image final `closed`.
-5. On trouver les contours via `findContours` pour calculer leurs surfaces. Comme ça, on peut trier quels contours on veut garder au pas [même processus pour la plaque d'immatriculation qu’on a vu en TD machine]
+4. On fait une fermeture pour fermer les trous, si possible, à l'image `edges` **qui est l'image Movement binarisé**. On obtiens l'image final `closed`. Comme ça, on va ameliorer la detection des contours.
+5. On trouve les contours via `findContours` pour calculer leurs surfaces. Comme ça, on peut trier quels contours on veut garder au pas [même processus pour la plaque d'immatriculation qu’on a vu en TD machine - on trie selon la surface]
 6. Designer le rectangle autour de voitures
 7. On applique l'algorithme de compter les voitures
 
@@ -254,13 +254,13 @@ Il faut faire un traitement d'image adapté qui est capable de détecter les obj
 
 ###### Image *Movement*
 
-Sauvegarder le frame en copie pour réaliser la substruction avec le prochain frame. Comme ça on peut obtenir l'image Mouvement qui aura seulement les objets qui bougent seulement.
+Sauvegarder le frame en copie pour réaliser la substruction avec le prochain frame. Comme ça on peut obtenir l'image Mouvement qui aura seulement les objets qui bougent seulement. Il s'agit d'une technique assez universel qu'on peut trouver dans plusieurs programmes de traitment d'image.
 
 > En C++ et OpenCv, il faut faire un clone() de l'image courant pour être sûr qu'on obtiens pas une référencé vers l'image courant mais vraiment un copie de l'image courant. C'est réalisé via `frame_prec = m_frame.clone();`
 
 ###### Image Movement en niveau de gris
 
-On utilise le LUT de OpenCV de base qui est COLOR_BGR2GRAY. Voici l’application :
+On utilise le LUT de OpenCV de base qui est COLOR_BGR2GRAY. On est obligé de le faire pour avancer avec la segmentation. Voici l’application :
 
 ```cpp
 /* Obtenir l'image Movement en niveau de grey */
@@ -269,7 +269,7 @@ On utilise le LUT de OpenCV de base qui est COLOR_BGR2GRAY. Voici l’applicatio
 
 ###### Segmentation de l'image Movement
 
-On utilise aussi la méthode prédéfini chez OpenCV qui est THRESH_BINARY via `cv::threshold(gray, edges, threshold_value, 255, cv::THRESH_BINARY);`
+On utilise aussi la méthode prédéfini chez OpenCV qui est THRESH_BINARY via `cv::threshold(gray, edges, threshold_value, 255, cv::THRESH_BINARY);`. Maintenant on peut appliquer des fermetures et des ouvertures si besoin. Ci-dessous on appliquere une fermeture car comme on a déjà mentioné on est interessés de fermer des trous sur l'image binarisé, tout en ameliorant les resultats de detcion des contours.
 
 ###### Application de la fermeture (érosion -> dilatation)
 
@@ -281,7 +281,7 @@ On utilise aussi la méthode prédéfini chez OpenCV qui est THRESH_BINARY via `
 	cv::erode(dilated, closed, masque);
 ```
 
-La masque choisi est un rectangle de taille 15x15 qu'on définit à `cv::Mat masque = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15));`
+La masque choisi est un rectangle de taille 15x15 qu'on définit avec `cv::Mat masque = cv::getStructuringElement(cv::MORPH_RECT, cv::Size(15, 15));`
 
 ###### Calcul de la surface de contours & designer les rectangles
 
@@ -308,10 +308,10 @@ Après plusieurs empirements, on a arrivé sur la condition `area > 135 && area 
 
 ###### Compter les voitures (algorithme)
 
-1. **Comparaison des rectangles: ** Pour chaque nouveau rectangle détecté (voiture actuelle), l'algorithme le compare avec les rectangles détectés précédemment.
-2. **Calcul de la distance: ** La distance euclidienne entre les centres des rectangles est calculée pour déterminer s'il s'agit du même véhicule.
-3. **Classification: ** Si le véhicule est considéré comme nouveau (distance supérieure au seuil), il est incrémenté dans le compteur de voitures à gauche ou à droite selon sa position.
-4. **Mise à jour: ** La liste des voitures précédentes est mise à jour avec la liste des voitures actuelles pour la prochaine itération.
+1. Comparaison des rectangles: Pour chaque nouveau rectangle détecté (voiture actuelle), l'algorithme le compare avec les rectangles détectés précédemment.
+2. Calcul de la distance: La distance euclidienne entre les centres des rectangles est calculée pour déterminer s'il s'agit du même véhicule.
+3. Classification: Si le véhicule est considéré comme nouveau (distance supérieure au seuil), il est incrémenté dans le compteur de voitures à gauche ou à droite selon sa position.
+4. Mise à jour: La liste des voitures précédentes est mise à jour avec la liste des voitures actuelles pour la prochaine itération.
 
 ```cpp
 // Compter les voitures selon les rectangles approximatifs donnes
@@ -368,7 +368,7 @@ Le principe de l'algorithme est la distance euclidienne entre les centres des de
 
 Voici un exemple d'application des différents étapes :
 
-![1729097157383](https://i.postimg.cc/dVsCbCgn/image.png)
+![1729097157383](https://cdn.madebyvasilis.site/group/1729097157383.png)
 
 ##### Pour aller plus loin...
 
