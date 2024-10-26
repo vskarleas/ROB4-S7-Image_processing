@@ -15,7 +15,9 @@ Bienvenue dans le dépôt du module de **Traitement d'image** (ROB4 Polytech Sor
   - Filtre Nagao
   - Et plus encore...
 
-Ce cours vous permettra d'acquérir une compréhension approfondie des techniques de traitement d'image, qu'elles soient basiques ou avancées, en analysant l'effet de divers filtres et opérations sur les données d'image.
+# 🚗 Détection des marquages ​​au sol et suivi des véhicules avec C++ et OpenCV 🚗
+
+Pour en savoir plus sur ce projet particulier, consultez le dossier TP2 ou visitez le lien [https://github.com/vskarleas/ROB4-S7-Image_processing/tree/main/TP2](https://github.com/vskarleas/ROB4-S7-Image_processing/tree/main/TP2).
 
 ---
 
@@ -34,11 +36,9 @@ Welcome to the repository for the **Image Processing** course. Here, you will fi
   - Nagao Filter
   - And more...
 
-This course will guide you through fundamental and advanced image processing techniques, providing a comprehensive understanding of how various filters and operations affect image data.
-
 # 🚗 Detecting Lane Markings and Tracking Vehicles with C++ and OpenCV 🚗
 
-Find out more on this particular project at the folder TP2 or you can visit the link (https://github.com/vskarleas/ROB4-S7-Image_processing/tree/main/TP2)[https://github.com/vskarleas/ROB4-S7-Image_processing/tree/main/TP2].
+Find out more on this particular project at the folder TP2 or you can visit the link [https://github.com/vskarleas/ROB4-S7-Image_processing/tree/main/TP2](https://github.com/vskarleas/ROB4-S7-Image_processing/tree/main/TP2).
 
 ---
 
