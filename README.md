@@ -36,6 +36,10 @@ Welcome to the repository for the **Image Processing** course. Here, you will fi
 
 This course will guide you through fundamental and advanced image processing techniques, providing a comprehensive understanding of how various filters and operations affect image data.
 
+# 🚗 Detecting Lane Markings and Tracking Vehicles with C++ and OpenCV 🚗
+
+Find out more on this particular project at the folder TP2 or you can visit the link (https://github.com/vskarleas/ROB4-S7-Image_processing/tree/main/TP2)[https://github.com/vskarleas/ROB4-S7-Image_processing/tree/main/TP2].
+
 ---
 
 ### License Information
